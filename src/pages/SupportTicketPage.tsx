@@ -1,6 +1,7 @@
 import { useEffect,useState } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { addSupportMessage,getMySupportMessages,getMySupportTicket,reopenSupportTicket } from '../services/supportService';
+import { supabase } from '../lib/supabase';
 import type { SupportMessage,SupportTicket } from '../types/support';
 const status=(s:string)=>({open:'مفتوحة',in_progress:'قيد المعالجة',waiting_user:'بانتظار ردك',resolved:'تم الحل',closed:'مغلقة'} as Record<string,string>)[s]||s;
 const category=(s:string)=>({account:'الحساب',request:'الطلبات',offer:'العروض',supplier:'الموردون',verification:'التوثيق',subscription:'PRO / الاشتراك',technical:'مشكلة تقنية',other:'أخرى'} as Record<string,string>)[s]||s;
@@ -8,7 +9,31 @@ const priority=(s:string)=>({low:'منخفضة',normal:'عادية',high:'عال
 const date=(v:string)=>new Intl.DateTimeFormat('ar-SY',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
 export default function SupportTicketPage(){return <ProtectedRoute><Content/></ProtectedRoute>}
 function Content(){const id=window.location.pathname.split('/').filter(Boolean).pop()||'';const [ticket,setTicket]=useState<SupportTicket|null>(null),[messages,setMessages]=useState<SupportMessage[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[text,setText]=useState(''),[sending,setSending]=useState(false);
- const load=async()=>{setLoading(true);setError('');const [t,m]=await Promise.all([getMySupportTicket(id),getMySupportMessages(id)]);if(t.error||m.error||!t.ticket)setError('تعذر تحميل التذكرة أو أنها غير متاحة.');else{setTicket(t.ticket);setMessages(m.messages)}setLoading(false)};useEffect(()=>{void load()},[id]);
+ const load=async()=>{setLoading(true);setError('');const [t,m]=await Promise.all([getMySupportTicket(id),getMySupportMessages(id)]);if(t.error||m.error||!t.ticket)setError('تعذر تحميل التذكرة أو أنها غير متاحة.');else{setTicket(t.ticket);setMessages(m.messages)}setLoading(false)};useEffect(()=>{
+  void load();
+
+  if (!supabase || !id) return;
+
+  const client = supabase;
+  let active = true;
+  const channel = client
+    .channel(`support-ticket-user-${id}`)
+    .on(
+      'postgres_changes',
+      { event:'INSERT', schema:'public', table:'support_messages', filter:`ticket_id=eq.${id}` },
+      (payload) => {
+        if (!active) return;
+        const message = payload.new as SupportMessage;
+        setMessages(items => items.some(item => item.id === message.id) ? items : [...items, message]);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    active = false;
+    void client.removeChannel(channel);
+  };
+},[id]);
  const send=async()=>{if(sending||!text.trim()||!ticket)return;setSending(true);setError('');const r=await addSupportMessage(id,text);if(r.error)setError(r.error.message||'تعذر إرسال الرد.');else{setText('');await load()}setSending(false)};
  const reopen=async()=>{const r=await reopenSupportTicket(id);if(r.error)setError(r.error.message||'تعذر إعادة فتح التذكرة.');else await load()};
  if(loading)return <main dir="rtl" className="grid min-h-screen place-items-center bg-slate-50"><p className="font-black">جارٍ تحميل التذكرة...</p></main>;

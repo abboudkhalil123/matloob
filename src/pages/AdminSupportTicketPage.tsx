@@ -3,12 +3,54 @@ import AdminRoute from '../components/AdminRoute';
 import { adminReplySupportTicket,adminUpdateSupportTicket,getAdminSupportMessages,getAdminSupportTicket } from '../services/supportService';
 import type { AdminSupportTicket,SupportMessage,SupportPriority,SupportStatus } from '../types/support';
 import { AdminPage } from './AdminDashboardPage';
+import { supabase } from '../lib/supabase';
 const status={open:'مفتوحة',in_progress:'قيد المعالجة',waiting_user:'بانتظار المستخدم',resolved:'تم الحل',closed:'مغلقة'} as Record<string,string>;
 const priority={low:'منخفضة',normal:'عادية',high:'عالية',urgent:'عاجلة'} as Record<string,string>;
 const dt=(v:string)=>new Intl.DateTimeFormat('ar-SY',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
 export default function AdminSupportTicketPage(){return <AdminRoute><Content/></AdminRoute>}
 function Content(){const id=window.location.pathname.split('/').filter(Boolean).pop()||'';const [ticket,setTicket]=useState<AdminSupportTicket|null>(null),[messages,setMessages]=useState<SupportMessage[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[text,setText]=useState(''),[sending,setSending]=useState(false),[saving,setSaving]=useState(false),[newStatus,setNewStatus]=useState<SupportStatus>('open'),[newPriority,setNewPriority]=useState<SupportPriority>('normal');
- const load=async()=>{setLoading(true);const [t,m]=await Promise.all([getAdminSupportTicket(id),getAdminSupportMessages(id)]);if(t.error||m.error||!t.ticket)setError('تعذر تحميل التذكرة.');else{setTicket(t.ticket);setMessages(m.messages);setNewStatus(t.ticket.status);setNewPriority(t.ticket.priority)}setLoading(false)};useEffect(()=>{void load()},[id]);
+ const load=async()=>{setLoading(true);const [t,m]=await Promise.all([getAdminSupportTicket(id),getAdminSupportMessages(id)]);if(t.error||m.error||!t.ticket)setError('تعذر تحميل التذكرة.');else{setTicket(t.ticket);setMessages(m.messages);setNewStatus(t.ticket.status);setNewPriority(t.ticket.priority)}setLoading(false)};useEffect(()=>{
+  void load();
+
+  if (!supabase || !id) return;
+
+  const client = supabase;
+  let active = true;
+  const channel = client
+    .channel(`support-ticket-admin-${id}`)
+    .on(
+      'postgres_changes',
+      { event:'INSERT', schema:'public', table:'support_messages' },
+      (payload) => {
+        if (!active) return;
+        const message = payload.new as SupportMessage;
+        if (message.ticket_id !== id) return;
+        setMessages(items => items.some(item => item.id === message.id) ? items : [...items, message]);
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event:'UPDATE', schema:'public', table:'support_tickets' },
+      (payload) => {
+        if (!active) return;
+        const updated = payload.new as AdminSupportTicket;
+        if (updated.id !== id) return;
+        setTicket(current => current ? { ...current, ...updated } : current);
+        setNewStatus(updated.status);
+        setNewPriority(updated.priority);
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        void load();
+      }
+    });
+
+  return () => {
+    active = false;
+    void client.removeChannel(channel);
+  };
+},[id]);
  const reply=async()=>{if(sending||!text.trim())return;setSending(true);setError('');const r=await adminReplySupportTicket(id,text);if(r.error)setError(r.error.message||'تعذر إرسال الرد.');else{setText('');await load()}setSending(false)};
  const save=async()=>{setSaving(true);setError('');const r=await adminUpdateSupportTicket(id,newStatus,newPriority);if(r.error)setError(r.error.message||'تعذر تحديث التذكرة.');else await load();setSaving(false)};
  if(loading)return <AdminPage><div className="rounded-2xl bg-white p-12 text-center font-black">جارٍ التحميل...</div></AdminPage>;if(!ticket)return <AdminPage><div className="rounded-2xl bg-white p-12 text-center font-black">التذكرة غير موجودة.</div></AdminPage>;

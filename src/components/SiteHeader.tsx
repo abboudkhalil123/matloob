@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
+import { supabase } from "../lib/supabase";
 import { getUnreadNotificationCount } from "../services/notificationService";
 import Brand from "./Brand";
+import { requestBrowserNotificationPermission, showBrowserNotification } from "../lib/browserNotifications";
 
 export default function SiteHeader() {
   const { user, profile, loading, signOut } = useAuth();
@@ -25,14 +27,48 @@ export default function SiteHeader() {
 
   useEffect(() => {
     let active = true;
-    if (!user) {
+    let channel: ReturnType<NonNullable<typeof supabase>["channel"]> | null = null;
+
+    if (!user || !supabase) {
       setUnreadCount(0);
       return () => { active = false; };
     }
-    void getUnreadNotificationCount().then((result) => {
+
+    const client = supabase;
+
+    const refreshUnreadCount = async () => {
+      const result = await getUnreadNotificationCount();
       if (active && !result.error) setUnreadCount(result.count);
-    });
-    return () => { active = false; };
+    };
+
+    void refreshUnreadCount();
+    void requestBrowserNotificationPermission();
+
+    channel = client
+      .channel(`header-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          void refreshUnreadCount();
+          const notification = payload.new as { title?: string; message?: string; body?: string };
+          showBrowserNotification(
+            notification.title || "مطلوب",
+            notification.message || notification.body || "لديك إشعار جديد في مطلوب."
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      if (channel) void client.removeChannel(channel);
+    };
   }, [user]);
 
   async function handleLogout() {
