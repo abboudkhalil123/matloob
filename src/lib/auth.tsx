@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (currentProfile && currentProfile.is_active === false) {
         setProfile(null);
         setProfileLoading(false);
-        await supabase.auth.signOut();
+        await supabase?.auth.signOut();
         window.alert("تم إيقاف هذا الحساب من قبل الإدارة.");
         return;
       }

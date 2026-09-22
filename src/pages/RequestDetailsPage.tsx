@@ -467,17 +467,85 @@ export default function RequestDetailsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">إدارة الطلب</h2><p className="mt-1 text-sm text-slate-500">يمكنك تعديل الطلب طالما أنه ما زال مفتوحًا.</p></div>{!editingRequest && <button type="button" onClick={startEditRequest} className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white">تعديل الطلب</button>}</div>
             {editingRequest && <form onSubmit={handleRequestEditSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
               {requestEditError && <div className="sm:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800">{requestEditError}</div>}
-              <Field label="عنوان الطلب *" value={requestEditForm.title} onChange={e => setRequestEditForm(v => ({...v,title:e.target.value}))} />
-              <label className="block text-sm font-black text-slate-700">التصنيف *<select value={requestEditForm.category_id} onChange={e => setRequestEditForm(v => ({...v,category_id:e.target.value}))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none"><option value="">اختر التصنيف</option>{editCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-              <div className="sm:col-span-2"><Field label="الوصف *" textarea value={requestEditForm.description} onChange={e => setRequestEditForm(v => ({...v,description:e.target.value}))} /></div>
-              <Field label="الكمية" type="number" min="0" value={requestEditForm.quantity} onChange={e => setRequestEditForm(v => ({...v,quantity:e.target.value}))} />
-              <Field label="الوحدة" value={requestEditForm.unit} onChange={e => setRequestEditForm(v => ({...v,unit:e.target.value}))} />
-              <label className="block text-sm font-black text-slate-700">المدينة *<select value={requestEditForm.city_id} onChange={e => setRequestEditForm(v => ({...v,city_id:e.target.value}))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none"><option value="">اختر المدينة</option>{editCities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-              <Field label="منطقة التسليم" value={requestEditForm.delivery_area} onChange={e => setRequestEditForm(v => ({...v,delivery_area:e.target.value}))} />
-              <Field label="الموعد النهائي" type="date" value={requestEditForm.deadline} onChange={e => setRequestEditForm(v => ({...v,deadline:e.target.value}))} />
-              <Field label="الميزانية" type="number" min="0" value={requestEditForm.budget} onChange={e => setRequestEditForm(v => ({...v,budget:e.target.value}))} />
-              <Field label="طريقة التواصل" value={requestEditForm.preferred_contact} onChange={e => setRequestEditForm(v => ({...v,preferred_contact:e.target.value}))} />
-              <Field label="رقم الهاتف" value={requestEditForm.phone} onChange={e => setRequestEditForm(v => ({...v,phone:e.target.value}))} />
+              <Field
+  label="عنوان الطلب *"
+  value={requestEditForm.title}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, title: e.target.value }))
+  }
+/>
+
+<div className="sm:col-span-2">
+  <Field
+    label="الوصف *"
+    textarea
+    value={requestEditForm.description}
+    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+      setRequestEditForm(v => ({ ...v, description: e.target.value }))
+    }
+  />
+</div>
+
+<Field
+  label="الكمية"
+  type="number"
+  min="0"
+  value={requestEditForm.quantity}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, quantity: e.target.value }))
+  }
+/>
+
+<Field
+  label="الوحدة"
+  value={requestEditForm.unit}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, unit: e.target.value }))
+  }
+/>
+
+<Field
+  label="منطقة التسليم"
+  value={requestEditForm.delivery_area}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, delivery_area: e.target.value }))
+  }
+/>
+
+<Field
+  label="الموعد النهائي"
+  type="date"
+  value={requestEditForm.deadline}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, deadline: e.target.value }))
+  }
+/>
+
+<Field
+  label="الميزانية"
+  type="number"
+  min="0"
+  value={requestEditForm.budget}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, budget: e.target.value }))
+  }
+/>
+
+<Field
+  label="طريقة التواصل"
+  value={requestEditForm.preferred_contact}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, preferred_contact: e.target.value }))
+  }
+/>
+
+<Field
+  label="رقم الهاتف"
+  value={requestEditForm.phone}
+  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+    setRequestEditForm(v => ({ ...v, phone: e.target.value }))
+  }
+/>
               <div className="sm:col-span-2 flex flex-wrap justify-end gap-3"><button type="button" onClick={() => { setEditingRequest(false); setRequestEditError(""); }} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black">إلغاء</button><button disabled={requestEditSaving} type="submit" className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-60">{requestEditSaving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</button></div>
             </form>}
           </section>}

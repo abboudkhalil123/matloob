@@ -53,7 +53,8 @@ export default function CreateRequestPage() {
     if (result.error || !result.request) { setSubmitting(false); setError(result.error?.message ?? "تعذر نشر الطلب."); return; }
 
     if (attachmentFiles.length) {
-      const results = attachmentFiles.map(file => ({ name: file.name, status: "pending" as const }));
+      const results: { name: string; status: "pending" | "error" | "success" }[] =
+  attachmentFiles.map(file => ({ name: file.name, status: "pending" }));
       setAttachmentResults(results);
       let uploadFailed: string | null = null;
       const uploadedAttachmentIds: string[] = [];
