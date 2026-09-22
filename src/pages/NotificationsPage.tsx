@@ -31,36 +31,33 @@ function NotificationsContent() {
   const [message, setMessage] = useState("");
 
   async function load() {
-    setLoading(true);
-    setError("");
-
     const result = await getMyNotifications();
 
     if (result.error) {
       setError("تعذر تحميل الإشعارات حاليًا.");
-    } else {
-      setNotifications(result.notifications);
+      return;
     }
 
-    setLoading(false);
+    setNotifications(result.notifications);
+    setError("");
   }
-
-  useEffect(() => {
-    void load();
-  }, []);
 
   useEffect(() => {
     if (!supabase) return;
 
     let cancelled = false;
-    let channel: any;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     async function setupRealtime() {
       const {
         data: { user },
       } = await supabase!.auth.getUser();
 
-      if (cancelled || !user) return;
+      if (cancelled || !user) {
+        setLoading(false);
+        return;
+      }
 
       channel = supabase!
         .channel(`notifications-${user.id}`)
@@ -84,13 +81,45 @@ function NotificationsContent() {
             });
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log("[Notifications Realtime]", status);
+
+          if (
+            !cancelled &&
+            (status === "CHANNEL_ERROR" || status === "TIMED_OUT")
+          ) {
+            if (reconnectTimer) {
+              clearTimeout(reconnectTimer);
+            }
+
+            reconnectTimer = setTimeout(() => {
+              if (!cancelled) {
+                if (channel) {
+                  void supabase!.removeChannel(channel);
+                  channel = null;
+                }
+
+                void setupRealtime();
+              }
+            }, 3000);
+          }
+        });
+
+      await load();
+
+      if (!cancelled) {
+        setLoading(false);
+      }
     }
 
     void setupRealtime();
 
     return () => {
       cancelled = true;
+
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
 
       if (channel) {
         void supabase!.removeChannel(channel);
