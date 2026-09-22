@@ -1,0 +1,23 @@
+import { useEffect, useState } from "react";
+import AdminRoute from "../components/AdminRoute";
+import { getAdminSuppliers } from "../services/adminService";
+import { getCities } from "../services/requestService";
+import { AdminPage } from "./AdminDashboardPage";
+import type { City } from "../types/request";
+
+export default function AdminSuppliersPage() { return <AdminRoute><Content /></AdminRoute>; }
+function Content() {
+  const [search, setSearch] = useState(""); const [city, setCity] = useState(""); const [verified, setVerified] = useState(""); const [cities, setCities] = useState<City[]>([]); const [page, setPage] = useState(1);
+  const [state, setState] = useState<Awaited<ReturnType<typeof getAdminSuppliers>> | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+  useEffect(() => { void getCities().then(r => setCities(r.cities)); }, []);
+  async function load() { setLoading(true); const r = await getAdminSuppliers({ search, cityId: city || undefined, verified: verified === "" ? undefined : verified === "true", page, pageSize: 12 }); setState(r); setError(r.error ? "تعذر تحميل الموردين." : ""); setLoading(false); }
+  useEffect(() => { const t = window.setTimeout(() => void load(), 250); return () => window.clearTimeout(t); }, [search, city, verified, page]);
+  return <AdminPage>
+    <div className="mb-7 flex items-center justify-between"><div><p className="text-sm font-black text-slate-400">إدارة المنصة</p><h1 className="mt-1 text-3xl font-black">إدارة الموردين</h1></div><a href="/admin" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold">لوحة الإدارة</a></div>
+    <div className="mb-5 grid gap-3 md:grid-cols-3"><input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="بحث باسم الشركة أو النشاط" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" /><select value={city} onChange={e => { setCity(e.target.value); setPage(1); }} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"><option value="">كل المدن</option>{cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><select value={verified} onChange={e => { setVerified(e.target.value); setPage(1); }} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"><option value="">كل حالات التوثيق</option><option value="true">موثق</option><option value="false">غير موثق</option></select></div>
+    {error && <div className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div>}
+    {loading ? <div className="rounded-2xl bg-white p-10 text-center font-bold">جارٍ التحميل...</div> : state?.suppliers.length ? <><div className="grid gap-3">{state.suppliers.map(s => <article key={s.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><h3 className="font-black">{s.companyName || s.supplierName || "مورد بدون اسم"}</h3><p className="mt-1 text-sm text-slate-500">{s.businessType || "نشاط غير محدد"} · {s.cityName || "مدينة غير محددة"}</p><p className="mt-2 text-xs text-slate-400">{s.reviewCount} مراجعة · {s.ratingAverage == null ? "لا يوجد تقييم" : `${s.ratingAverage.toFixed(2)} / 5`} · أنشئ في {new Date(s.createdAt).toLocaleDateString("ar-SY")}</p></div><div className="flex flex-wrap gap-2 text-xs font-black"><span className={s.verified ? "rounded-full bg-emerald-50 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1"}>{s.verified ? "موثق" : "غير موثق"}</span><span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">{pro(s.proStatus)}</span></div></div></article>)}</div><Pager page={page} next={state.hasNextPage} total={state.totalCount} prev={() => setPage(p => Math.max(1, p - 1))} go={() => setPage(p => p + 1)} /></> : <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center font-bold text-slate-500">لا يوجد موردون مطابقون.</div>}
+  </AdminPage>;
+}
+const pro = (s:string) => ({active:"PRO فعّال",pending:"PRO معلّق",expired:"PRO منتهي",cancelled:"PRO ملغى",free:"FREE"}[s] || s);
+function Pager(p:{page:number;next:boolean;total:number;prev:()=>void;go:()=>void}) { return <div className="mt-5 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"><span>إجمالي النتائج: {p.total}</span><div className="flex gap-2"><button disabled={p.page===1} onClick={p.prev} className="rounded-lg border px-3 py-2 disabled:opacity-40">السابق</button><b className="px-2 py-2">{p.page}</b><button disabled={!p.next} onClick={p.go} className="rounded-lg border px-3 py-2 disabled:opacity-40">التالي</button></div></div>; }

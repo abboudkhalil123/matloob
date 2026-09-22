@@ -1,0 +1,63 @@
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import AdminRoute from "../components/AdminRoute";
+import { AdminPage } from "./AdminDashboardPage";
+import { createAdminCategory, getAdminCategories, setAdminCategoryActive, updateAdminCategory } from "../services/adminService";
+import type { AdminCategory } from "../types/adminReference";
+
+const PAGE_SIZE = 12;
+
+export default function AdminCategoriesPage() { return <AdminRoute><AdminCategoriesContent /></AdminRoute>; }
+
+function AdminCategoriesContent() {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState<AdminCategory[]>([]);
+  const [total, setTotal] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [editing, setEditing] = useState<AdminCategory | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  async function load() {
+    setLoading(true); setError("");
+    const result = await getAdminCategories({ search, isActive: status === "" ? undefined : status === "true", page, pageSize: PAGE_SIZE });
+    setRows(result.categories); setTotal(result.totalCount); setHasNext(result.hasNextPage);
+    if (result.error) setError(result.error.message || "تعذر تحميل التصنيفات.");
+    setLoading(false);
+  }
+  useEffect(() => { void load(); }, [page, status]);
+  useEffect(() => { const t = window.setTimeout(() => { if (page !== 1) setPage(1); else void load(); }, 350); return () => window.clearTimeout(t); }, [search]);
+
+  async function toggle(row: AdminCategory) {
+    setBusyId(row.id); setError(""); setMessage("");
+    const result = await setAdminCategoryActive(row.id, !row.isActive);
+    if (result.error) setError(result.error.message || "تعذر تغيير حالة التصنيف."); else { setMessage(row.isActive ? "تم تعطيل التصنيف." : "تم تفعيل التصنيف."); await load(); }
+    setBusyId(null);
+  }
+
+  return <AdminPage>
+    <Header title="إدارة التصنيفات" back="/admin" action={<button onClick={() => { setCreating(true); setEditing(null); setMessage(""); setError(""); }} className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">إضافة تصنيف</button>} />
+    <div className="mb-5 grid gap-3 md:grid-cols-[1fr_180px]"><input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث باسم التصنيف أو slug" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-slate-400" /><select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"><option value="">الكل</option><option value="true">فعال</option><option value="false">غير فعال</option></select></div>
+    {message && <Alert text={message} success />}{error && <Alert text={error} />}
+    {loading ? <Loading /> : rows.length ? <><div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"><table className="min-w-full text-sm"><thead className="bg-slate-50 text-right"><tr><th className="px-4 py-3 font-black">التصنيف</th><th className="px-4 py-3 font-black">Slug</th><th className="px-4 py-3 font-black">الحالة</th><th className="px-4 py-3 font-black">الاستخدام</th><th className="px-4 py-3 font-black">تاريخ الإنشاء</th><th className="px-4 py-3 font-black">إجراءات</th></tr></thead><tbody>{rows.map(row => <tr key={row.id} className="border-t border-slate-100"><td className="px-4 py-4 font-black">{row.name}</td><td className="px-4 py-4 text-slate-500">{row.slug}</td><td className="px-4 py-4"><Status active={row.isActive} /></td><td className="px-4 py-4 text-slate-600">{row.usageCount} <span className="text-xs text-slate-400">({row.requestCount} طلب · {row.supplierCount} مورد)</span></td><td className="px-4 py-4 text-slate-500">{date(row.createdAt)}</td><td className="px-4 py-4"><div className="flex flex-wrap gap-2"><button disabled={busyId === row.id} onClick={() => { setEditing(row); setCreating(false); }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-black disabled:opacity-50">تعديل</button><button disabled={busyId === row.id} onClick={() => void toggle(row)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-black disabled:opacity-50">{busyId === row.id ? "جارٍ..." : row.isActive ? "تعطيل" : "تفعيل"}</button></div></td></tr>)}</tbody></table></div><Pager page={page} total={total} hasNext={hasNext} onPrev={() => setPage(p => Math.max(1, p - 1))} onNext={() => setPage(p => p + 1)} /></> : <Empty />}
+    {(creating || editing) && <CategoryForm initial={editing} onClose={() => { setCreating(false); setEditing(null); }} onSaved={async () => { setCreating(false); setEditing(null); setMessage(editing ? "تم تعديل التصنيف." : "تمت إضافة التصنيف."); await load(); }} />}
+  </AdminPage>;
+}
+
+function CategoryForm({ initial, onClose, onSaved }: { initial: AdminCategory | null; onClose: () => void; onSaved: () => Promise<void> }) {
+  const [name, setName] = useState(initial?.name ?? ""); const [slug, setSlug] = useState(initial?.slug ?? ""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  async function submit(e: FormEvent) { e.preventDefault(); setError(""); if (!name.trim() || !slug.trim()) { setError("الاسم وSlug مطلوبان."); return; } setBusy(true); const result = initial ? await updateAdminCategory(initial.id, name.trim(), slug.trim()) : await createAdminCategory(name.trim(), slug.trim()); if (result.error) setError(result.error.message || "تعذر حفظ التصنيف."); else await onSaved(); setBusy(false); }
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4"><form onSubmit={submit} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" dir="rtl"><div className="flex items-center justify-between"><h2 className="text-xl font-black">{initial ? "تعديل التصنيف" : "إضافة تصنيف"}</h2><button type="button" onClick={onClose} className="text-slate-400">✕</button></div><label className="mt-6 block text-sm font-black">الاسم<input value={name} onChange={e => setName(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none" /></label><label className="mt-4 block text-sm font-black">Slug<input value={slug} onChange={e => setSlug(e.target.value.toLowerCase())} dir="ltr" className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none" placeholder="manufacturing" /></label>{error && <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</p>}<div className="mt-6 flex gap-2"><button type="submit" disabled={busy} className="flex-1 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{busy ? "جارٍ الحفظ..." : "حفظ"}</button><button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold">إلغاء</button></div></form></div>;
+}
+
+function Header({ title, back, action }: { title: string; back: string; action?: ReactNode }) { return <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><a href={back} className="text-sm font-bold text-slate-400 hover:text-slate-700">← العودة للإدارة</a><h1 className="mt-2 text-3xl font-black">{title}</h1></div>{action}</div>; }
+function Status({ active }: { active: boolean }) { return <span className={active ? "rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500"}>{active ? "فعال" : "غير فعال"}</span>; }
+function Alert({ text, success = false }: { text: string; success?: boolean }) { return <div className={`mb-5 rounded-xl px-4 py-3 text-sm font-bold ${success ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-rose-200 bg-rose-50 text-rose-700"}`}>{text}</div>; }
+function Loading() { return <div className="grid gap-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-200" />)}</div>; }
+function Empty() { return <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm font-bold text-slate-500">لا توجد تصنيفات مطابقة.</div>; }
+function Pager({ page, total, hasNext, onPrev, onNext }: { page: number; total: number; hasNext: boolean; onPrev: () => void; onNext: () => void }) { return <div className="mt-5 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"><span className="font-bold text-slate-500">صفحة {page} · {total} عنصر</span><div className="flex gap-2"><button disabled={page === 1} onClick={onPrev} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">السابق</button><button disabled={!hasNext} onClick={onNext} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">التالي</button></div></div>; }
+function date(value: string) { return new Intl.DateTimeFormat("ar-SY", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value)); }

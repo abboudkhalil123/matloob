@@ -1,0 +1,11 @@
+export type ReportPeriod = { from: string | null; toExclusive: string | null; label: string };
+export type AdminReportSummary = { totalUsers:number; newUsers:number; requesterUsers:number; supplierUsers:number; totalRequests:number; newRequests:number; openRequests:number; inProgressRequests:number; completedRequests:number; cancelledRequests:number; supplierSelectedRequests:number; totalOffers:number; newOffers:number; averageOffersPerRequest:number; requestsWithOffers:number; totalSuppliers:number; newSuppliers:number; verifiedSuppliers:number; unverifiedSuppliers:number; activeProSuppliers:number };
+export type RequestFunnel = { requestsCreated:number; requestsWithOffers:number; requestsWithSelectedSupplier:number; requestsStarted:number; requestsCompleted:number; offersRate:number|null; selectionRate:number|null; startRate:number|null; completionRate:number|null };
+export type OfferAnalytics = { averageOffersPerRequest:number; maxOffersOnRequest:number; requestsWithoutOffers:number; requestsWithOneOffer:number; requestsWithMoreThanOneOffer:number };
+export type TopCategory = { id:string; name:string; requestCount:number; offerCount:number; supplierCount:number };
+export type TopCity = { id:string; name:string; requestCount:number; supplierCount:number; completedRequestCount:number };
+export type ActiveSupplier = { userId:string; supplierName:string; offerCount:number; selectedOfferCount:number; completedRequestCount:number; ratingAverage:number|null; verified:boolean; isPro:boolean };
+export type ActivityPoint = { bucket:string; requestCount:number; offerCount:number; newUserCount:number };
+export type StatusPoint = { status:string; requestCount:number };
+export type ProAnalytics = { activePro:number; pendingPro:number; expiredPro:number; expiredDuringPeriod:number; proActivationsDuringPeriod:number };
+export type VerificationAnalytics = { pending:number; approved:number; rejected:number; cancelled:number; createdDuringPeriod:number };
