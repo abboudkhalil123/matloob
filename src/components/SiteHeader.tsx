@@ -131,8 +131,11 @@ export default function SiteHeader() {
           ) : user ? (
             <>
               <a href="/dashboard" className="header-dashboard">لوحة التحكم</a>
-              <a href="/notifications" className="header-notifications" aria-label="الإشعارات" title="الإشعارات">
-                🔔
+              <a href="/notifications" className="header-icon-action header-notifications" aria-label="الإشعارات" title="الإشعارات">
+                <svg className="header-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
                 {unreadCount > 0 && <span className="header-notification-count">{unreadCount > 99 ? "99+" : unreadCount}</span>}
               </a>
               <a href="/profile/edit" className="header-profile" title="الملف الشخصي" aria-label="الملف الشخصي">
@@ -140,7 +143,12 @@ export default function SiteHeader() {
                   {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{displayName.trim().charAt(0) || "م"}</span>}
                 </span>
               </a>
-              <a href="/settings" className="header-settings" title="الإعدادات">⚙️</a>
+              <a href="/settings" className="header-icon-action header-settings" title="الإعدادات" aria-label="الإعدادات">
+                <svg className="header-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+                  <path d="m19.4 15 .1.1a2 2 0 0 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4V19a2 2 0 0 1-4 0v-.1a2 2 0 0 0-3.4-1.4l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a2 2 0 0 0-1.4-3.4H1.5a2 2 0 0 1 0-4h.1A2 2 0 0 0 3 4l-.1-.1A2 2 0 0 1 5.7 1.1l.1.1A2 2 0 0 0 9.2-.2V-.1a2 2 0 0 1 4 0V0a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a2 2 0 0 0 1.4 3.4h.1a2 2 0 0 1 0 4h-.1a2 2 0 0 0-1.4 3.4Z" transform="translate(0 2)" />
+                </svg>
+              </a>
               {profile?.role === "supplier" && (
                 <a href="/supplier/pro" className="pro-pill">PRO</a>
               )}

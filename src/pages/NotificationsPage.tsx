@@ -147,7 +147,7 @@ function NotificationsContent() {
     }
 
     if (notification.related_conversation_id) {
-      window.location.href = `/conversation/${notification.related_conversation_id}`;
+      window.location.href = `/conversations/${notification.related_conversation_id}`;
     } else if (notification.related_ticket_id) {
       window.location.href = `/support/${notification.related_ticket_id}`;
     } else if (notification.related_request_id) {

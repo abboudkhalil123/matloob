@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import SiteHeader from "../components/SiteHeader";
+import "./conversation.css";
 import { useAuth } from "../lib/auth";
 import {
   getConversationContext,

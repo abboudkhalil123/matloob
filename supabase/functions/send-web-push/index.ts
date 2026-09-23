@@ -54,12 +54,12 @@ function isAuthorized(request: Request) {
 function buildNotificationUrl(record: Record<string, unknown>) {
   const type = String(record.type || "");
 
-  if (type.startsWith("support_") && record.related_ticket_id) {
-    return `/support/${record.related_ticket_id}`;
+  if (record.related_conversation_id) {
+    return `/conversations/${record.related_conversation_id}`;
   }
 
-  if (record.related_request_id) {
-    return `/requests/${record.related_request_id}`;
+  if (type.startsWith("support_") && record.related_ticket_id) {
+    return `/support/${record.related_ticket_id}`;
   }
 
   if (record.related_request_id) {
@@ -107,6 +107,7 @@ Deno.serve(async (request) => {
       tag: `matloob-${record.type || "notification"}-${record.id || crypto.randomUUID()}`,
       icon: "/favicon.svg",
       badge: "/favicon.svg",
+      id: String(record.id || ""),
     });
 
     let sent = 0;

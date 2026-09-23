@@ -131,7 +131,7 @@ export default function SettingsPage() {
       <SiteHeader />
       <main
         dir="rtl"
-        className="min-h-screen bg-slate-50 text-slate-950"
+        className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-white"
       >
         <section className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="mb-7">
@@ -143,7 +143,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-5">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:bg-slate-900">
               <h2 className="text-lg font-black">الأمان</h2>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -152,14 +152,14 @@ export default function SettingsPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="كلمة المرور الجديدة"
-                  className="h-12 rounded-xl border border-slate-200 px-4 text-sm"
+                  className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
                 <input
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   placeholder="تأكيد كلمة المرور"
-                  className="h-12 rounded-xl border border-slate-200 px-4 text-sm"
+                  className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
 
@@ -191,14 +191,14 @@ export default function SettingsPage() {
                       if (!r.error) window.location.replace("/");
                     })
                   }
-                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black"
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   تسجيل الخروج
                 </button>
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:bg-slate-900">
               <h2 className="text-lg font-black">المظهر</h2>
               <p className="mt-2 text-sm font-semibold text-slate-500">
                 اختر المظهر الفاتح أو الداكن للموقع.
@@ -229,7 +229,7 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:bg-slate-900">
               <h2 className="text-lg font-black">إعدادات الإشعارات</h2>
 
               <p className="mt-2 text-sm leading-7 text-slate-500">
@@ -271,7 +271,7 @@ export default function SettingsPage() {
               )}
             </section>
 
-            <section className="rounded-2xl border border-rose-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-rose-200 bg-white p-5 shadow-sm dark:bg-slate-900">
               <h2 className="text-lg font-black text-rose-800">
                 الحساب والخصوصية
               </h2>
