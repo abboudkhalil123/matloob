@@ -6,7 +6,8 @@ export type NotificationType =
   | "request_cancelled"
   | "matching_request"
   | "support_reply"
-  | "support_status_changed";
+  | "support_status_changed"
+  | "new_message";
 
 export type Notification = {
   id: string;
@@ -16,6 +17,7 @@ export type Notification = {
   type: NotificationType;
   related_request_id: string | null;
   related_offer_id: string | null;
+  related_conversation_id: string | null;
   related_ticket_id: string | null;
   is_read: boolean;
   created_at: string;

@@ -3,7 +3,11 @@ import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { getUnreadNotificationCount } from "../services/notificationService";
 import Brand from "./Brand";
-import { requestBrowserNotificationPermission, showBrowserNotification } from "../lib/browserNotifications";
+import {
+  registerServiceWorkerAndPush,
+  requestBrowserNotificationPermission,
+  showBrowserNotification,
+} from "../lib/browserNotifications";
 
 export default function SiteHeader() {
   const { user, profile, loading, signOut } = useAuth();
@@ -31,7 +35,9 @@ export default function SiteHeader() {
 
     if (!user || !supabase) {
       setUnreadCount(0);
-      return () => { active = false; };
+      return () => {
+        active = false;
+      };
     }
 
     const client = supabase;
@@ -41,8 +47,22 @@ export default function SiteHeader() {
       if (active && !result.error) setUnreadCount(result.count);
     };
 
+    const setupPush = async () => {
+      const permission = await requestBrowserNotificationPermission();
+      if (!active) return;
+
+      if (permission === "granted") {
+        const result = await registerServiceWorkerAndPush(user.id);
+        if (result.error) {
+          console.error("[MATLOOB Push]", result.error);
+        } else {
+          console.log("[MATLOOB Push] subscription ready");
+        }
+      }
+    };
+
     void refreshUnreadCount();
-    void requestBrowserNotificationPermission();
+    void setupPush();
 
     channel = client
       .channel(`header-notifications-${user.id}`)
@@ -56,7 +76,15 @@ export default function SiteHeader() {
         },
         (payload) => {
           void refreshUnreadCount();
-          const notification = payload.new as { title?: string; message?: string; body?: string };
+
+          if (payload.eventType !== "INSERT") return;
+
+          const notification = payload.new as {
+            title?: string;
+            message?: string;
+            body?: string;
+          };
+
           showBrowserNotification(
             notification.title || "مطلوب",
             notification.message || notification.body || "لديك إشعار جديد في مطلوب."
@@ -107,7 +135,11 @@ export default function SiteHeader() {
                 🔔
                 {unreadCount > 0 && <span className="header-notification-count">{unreadCount > 99 ? "99+" : unreadCount}</span>}
               </a>
-              <a href="/profile/edit" className="header-profile" title="الملف الشخصي" aria-label="الملف الشخصي"><span className="header-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{displayName.trim().charAt(0) || "م"}</span>}</span></a>
+              <a href="/profile/edit" className="header-profile" title="الملف الشخصي" aria-label="الملف الشخصي">
+                <span className="header-avatar">
+                  {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{displayName.trim().charAt(0) || "م"}</span>}
+                </span>
+              </a>
               <a href="/settings" className="header-settings" title="الإعدادات">⚙️</a>
               {profile?.role === "supplier" && (
                 <a href="/supplier/pro" className="pro-pill">PRO</a>
@@ -120,7 +152,15 @@ export default function SiteHeader() {
               <a href="/register" className="header-register">إنشاء حساب</a>
             </>
           )}
-          <button className="mobile-menu-btn" type="button" aria-label="فتح القائمة" aria-expanded={open} onClick={() => setOpen(v => !v)}>☰</button>
+          <button
+            className="mobile-menu-btn"
+            type="button"
+            aria-label="فتح القائمة"
+            aria-expanded={open}
+            onClick={() => setOpen(v => !v)}
+          >
+            ☰
+          </button>
         </div>
       </div>
 

@@ -7,7 +7,7 @@ export async function getMyNotifications(): Promise<{ notifications: Notificatio
   if (!supabase) return { notifications: [], error: configError() };
   const { data, error } = await supabase
     .from("notifications")
-    .select("id,user_id,title,message,type,related_request_id,related_offer_id,related_ticket_id,is_read,created_at")
+    .select("id,user_id,title,message,type,related_request_id,related_offer_id,related_conversation_id,related_ticket_id,is_read,created_at")
     .order("created_at", { ascending: false });
   return { notifications: (data as Notification[] | null) ?? [], error };
 }

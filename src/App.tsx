@@ -1,5 +1,6 @@
 import RequestsPage from './pages/RequestsPage';
 import RequestDetailsPage from './pages/RequestDetailsPage';
+import ConversationPage from './pages/ConversationPage';
 import CreateRequestPage from './pages/CreateRequestPage';
 import SuppliersPage from './pages/SuppliersPage';
 import SupplierDetailsPage from './pages/SupplierDetailsPage';
@@ -88,6 +89,7 @@ function AppContent() {
   if (path === '/register') return <RegisterPage />;
   if (path === '/forgot-password') return <ForgotPasswordPage />;
   if (path === '/notifications') return <NotificationsPage />;
+  if (path.startsWith('/conversations/')) return <ProtectedRoute><ConversationPage /></ProtectedRoute>;
   if (path === '/dashboard') return <DashboardPage />;
   if (path === '/settings') return <ProtectedRoute><SettingsPage /></ProtectedRoute>;
   if (path === '/admin') return <AdminDashboardPage />;

@@ -10,6 +10,9 @@ import { isRequestSaved, saveRequest, unsaveRequest } from "../services/savedReq
 import type { OfferAttachment, RequestAttachment } from "../types/attachment";
 import type { Request, RequestStatus } from "../types/request";
 import type { Offer, OfferDurationUnit } from "../types/offer";
+import { getOrCreateConversation } from "../services/conversationService";
+
+import "./conversation.css";
 
 import SiteHeader from "../components/SiteHeader";
 const durationOptions: { value: OfferDurationUnit; label: string }[] = [
@@ -43,6 +46,7 @@ export default function RequestDetailsPage() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [selectingOfferId, setSelectingOfferId] = useState<string | null>(null);
+  const [conversationBusy, setConversationBusy] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyOffer);
@@ -402,6 +406,27 @@ export default function RequestDetailsPage() {
     setSelectingOfferId(null);
   }
 
+
+  async function handleOpenConversation() {
+    if (!selectedOffer || conversationBusy || (!isOwner && !isSelectedSupplier)) return;
+
+    setConversationBusy(true);
+    setOfferError("");
+
+    try {
+      const conversation = await getOrCreateConversation(selectedOffer.id);
+      window.location.href = `/conversations/${conversation.id}`;
+    } catch (conversationError) {
+      setOfferError(
+        conversationError instanceof Error
+          ? conversationError.message
+          : "تعذر فتح المحادثة حاليًا.",
+      );
+    } finally {
+      setConversationBusy(false);
+    }
+  }
+
   async function handleWorkflowAction(action: "start" | "complete" | "close" | "cancel") {
     if (!request || transitioning) return;
     const confirmations: Record<typeof action, string> = {
@@ -549,6 +574,36 @@ export default function RequestDetailsPage() {
               <div className="sm:col-span-2 flex flex-wrap justify-end gap-3"><button type="button" onClick={() => { setEditingRequest(false); setRequestEditError(""); }} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black">إلغاء</button><button disabled={requestEditSaving} type="submit" className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-60">{requestEditSaving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</button></div>
             </form>}
           </section>}
+
+          {!authLoading && user && selectedOffer && (isOwner || isSelectedSupplier) && (
+            <section className="conversation-launch-card mt-6 rounded-3xl border p-6 shadow-sm sm:p-8">
+              <div className="conversation-launch-row flex flex-wrap items-center justify-between gap-5">
+                <div className="min-w-0">
+                  <div className="conversation-launch-badge inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black">
+                    <span className="size-2 rounded-full bg-emerald-500" />
+                    المحادثة الخاصة بالعرض المختار
+                  </div>
+                  <h2 className="conversation-launch-title mt-4 text-xl font-black">تواصل مباشرة مع الطرف الآخر</h2>
+                  <p className="conversation-launch-text mt-2 max-w-2xl text-sm leading-7">
+                    ناقش تفاصيل التنفيذ والدفع والتسليم داخل محادثة مرتبطة بهذا الطلب والعرض المعتمد.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={conversationBusy}
+                  onClick={() => void handleOpenConversation()}
+                  className="conversation-launch-button inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9.4 9.4 0 0 1-4-.9L3 21l1.9-4.4A8.3 8.3 0 0 1 3 11.5a8.4 8.4 0 0 1 9-8.5 8.4 8.4 0 0 1 9 8.5Z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {conversationBusy ? "جارٍ فتح المحادثة..." : "فتح المحادثة"}
+                </button>
+              </div>
+            </section>
+          )}
+
           {!authLoading && user && profile?.role === "supplier" && !isOwner && (request.status === "open" || requestSaved) && <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div><h2 className="text-xl font-black">الطلبات المحفوظة</h2><p className="mt-2 text-sm text-slate-500">احفظ هذا الطلب للرجوع إليه لاحقًا.</p></div>

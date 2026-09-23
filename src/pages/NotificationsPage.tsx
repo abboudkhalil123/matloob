@@ -13,6 +13,7 @@ function notificationLabel(type: Notification["type"]) {
   if (type === "matching_request") return "تطابق طلب جديد";
   if (type === "support_reply") return "رد من الدعم";
   if (type === "support_status_changed") return "تحديث حالة الدعم";
+  if (type === "new_message") return "رسالة جديدة";
   return "تحديث";
 }
 
@@ -145,7 +146,9 @@ function NotificationsContent() {
       );
     }
 
-    if (notification.related_ticket_id) {
+    if (notification.related_conversation_id) {
+      window.location.href = `/conversation/${notification.related_conversation_id}`;
+    } else if (notification.related_ticket_id) {
       window.location.href = `/support/${notification.related_ticket_id}`;
     } else if (notification.related_request_id) {
       window.location.href = `/requests/${notification.related_request_id}`;
